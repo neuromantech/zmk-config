@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2020 The ZMK Contributors
+ * SPDX-License-Identifier: MIT
+ *
+ * Sofle — full keyboard keymap (covers BOTH halves + dongle central)
+ * neuroman.tech: https://github.com/neuromantech/zmk-config
+ *
+ * Hardware: 3x SuperMini NRF52840 (ZMK board id: nice_nano_v2)
+ *   - sofle_left  / sofle_right : halves (encoders fitted)
+ *   - sofle_dongle              : BLE dongle (central, no keys)
+ *
+ * This single keymap is used by every build (left, right, dongle) — ZMK's
+ * central runs the full keymap; peripherals only report key positions.
+ *
+ * RGB underglow NOT enabled (LEDs not soldered yet) — no &rgb_ug here.
+ * Encoders: bound to &inc_dec_kp (the only encoder rotate behavior in v0.3).
+ */
+
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+#include <dt-bindings/zmk/ext_power.h>
+
+#define BASE    0
+#define LOWER   1
+#define RAISE   2
+#define ADJUST  3
+
+/ {
+
+    /* ADJUST activates while LOWER + RAISE are both held */
+    conditional_layers {
+        compatible = "zmk,conditional-layers";
+        adjust_layer {
+            if-layers = <LOWER RAISE>;
+            then-layer = <ADJUST>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer {
+            display-name = "default";
+/*
+ * ,-----------------------------------------------------------.
+ * |   `  |  1 |  2 |  3 |  4 |  5 |          |  6 |  7 |  8 |  9 |  0 |      |
+ * |  ESC |  Q |  W |  E |  R |  T |          |  Y |  U |  I |  O |  P | BKSP |
+ * |  TAB |  A |  S |  D |  F |  G |          |  H |  J |  K |  L |  ; |  '   |
+ * | LSFT |  Z |  X |  C |  V |  B |  MUTE    |  N |  M |  , |  . |  / | RSFT |
+ * |      | GUI | ALT | CTL |LOWER| RET | SPACE |RAISE| RCTL| RALT| RGUI|    |
+ */
+            bindings = <
+&kp GRAVE &kp N1 &kp N2   &kp N3   &kp N4    &kp N5                           &kp N6 &kp N7    &kp N8    &kp N9   &kp N0   &none
+&kp ESC   &kp Q  &kp W    &kp E    &kp R     &kp T                            &kp Y  &kp U     &kp I     &kp O    &kp P    &kp BSPC
+&kp TAB   &kp A  &kp S    &kp D    &kp F     &kp G                            &kp H  &kp J     &kp K     &kp L    &kp SEMI &kp SQT
+&kp LSHFT &kp Z  &kp X    &kp C    &kp V     &kp B      &kp C_MUTE &none      &kp N  &kp M     &kp COMMA &kp DOT  &kp FSLH &kp RSHFT
+                 &kp LGUI &kp LALT &kp LCTRL &mo LOWER  &kp RET    &kp SPACE  &mo RAISE  &kp RCTRL &kp RALT  &kp RGUI
+            >;
+
+            /* Encoders: 1 = left (scroll), 2 = right (track skip) */
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN &inc_dec_kp C_NEXT C_PREV>;
+        };
+
+        lower_layer {
+            display-name = "lower";
+/*
+ * Numbers / symbols / F-keys
+ */
+            bindings = <
+&trans    &kp F1    &kp F2    &kp F3      &kp F4    &kp F5                    &kp F6    &kp F7   &kp F8    &kp F9    &kp F10   &kp F11
+&kp GRAVE &kp N1    &kp N2    &kp N3      &kp N4    &kp N5                    &kp N6    &kp N7   &kp N8    &kp N9    &kp N0    &kp F12
+&trans    &kp EXCL  &kp AT    &kp HASH    &kp DLLR  &kp PRCNT                 &kp CARET &kp AMPS &kp ASTRK &kp LPAR  &kp RPAR  &kp PIPE
+&trans    &kp EQUAL &kp MINUS &kp PLUS    &kp LBRC  &kp RBRC   &trans &trans  &kp LBKT  &kp RBKT &kp SEMI  &kp COLON &kp BSLH  &trans
+                    &trans    &trans      &trans    &trans     &trans &trans  &trans    &trans   &trans    &trans
+            >;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN &inc_dec_kp C_NEXT C_PREV>;
+        };
+
+        raise_layer {
+            display-name = "raise";
+/*
+ * Nav / Bluetooth / clipboard
+ */
+            bindings = <
+&bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4                  &trans    &trans    &trans   &trans    &trans  &trans
+&trans     &kp INS      &kp PSCRN    &kp K_CMENU  &trans       &trans                        &kp PG_UP &trans    &kp UP   &trans    &kp N0  &trans
+&trans     &kp LALT     &kp LCTRL    &kp LSHFT    &trans       &kp CLCK                      &kp PG_DN &kp LEFT  &kp DOWN &kp RIGHT &kp DEL &kp BSPC
+&trans     &kp K_UNDO   &kp K_CUT    &kp K_COPY   &kp K_PASTE  &trans        &trans  &trans  &trans    &trans    &trans   &trans    &trans  &trans
+                        &trans       &trans       &trans       &trans        &trans  &trans  &trans    &trans    &trans   &trans
+            >;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN &inc_dec_kp C_NEXT C_PREV>;
+        };
+
+        adjust_layer {
+            display-name = "adjust";
+/*
+ * System / power. RGB intentionally omitted (LEDs not soldered).
+ */
+            bindings = <
+&bt BT_CLR        &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_SEL 3    &bt BT_SEL 4                            &none &none &none &none &none &none
+&ext_power EP_TOG &none           &none           &none           &none           &none                                   &none &none &none &none &none &none
+&none             &none           &none           &none           &none           &none                                   &none &none &none &none &none &none
+&none             &none           &none           &none           &none           &none            &none &none  &none     &none &none &none &none &none &none
+                                  &none           &none           &none           &none            &none           &none  &none &none &none &none
+            >;
+        };
+    };
+};

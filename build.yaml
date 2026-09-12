@@ -1,30 +1,35 @@
-# Sofle RGB (split) + SuperMini NRF52840 BLE dongle
-# 3× SuperMini NRF52840 boards from customkbd:
-#   - 2× in hand RIGHT NOW: right half + BLE dongle/concentrator (testing now)
-#   - 1× in transit from Melbourne: left half (add when it arrives)
+# Sofle split — 3x SuperMini NRF52840 (ZMK board id: nice_nano_v2)
+# neuroman.tech: https://github.com/neuromantech/zmk-config
 #
-# SuperMini works in ZMK as nice_nano_v2 (pin-compatible, per joric/nrfmicro wiki).
-# Sofle RGB underglow built-in — NOT enabled (LEDs not soldered).
-# Encoders enabled on both halves.
+# IMPORTANT: this matrix is built with `include:` ONLY.
+# GitHub Actions merges include entries into matching top-level board/shield
+# combinations, which silently drops builds — so every target lives here.
 #
-# Flash order: dongle first (central), then right half (peripheral).
-# Left half added when 3rd SuperMini arrives.
+# Roles:
+#   sofle_right     central    (default role)  -> flash now, test w/o dongle
+#   sofle_left      peripheral                 -> 3rd SuperMini, in transit
+#   sofle_dongle    central, no keys           -> phase 2 (see note below)
+#   settings_reset  clears bonds               -> flash to all parts before pairing
+#
+# NOTE: ZMK's dongle guide says to verify the keyboard works WITHOUT a dongle
+# first. The dongle shield lives in boards/shields/sofle/ and is ready to add
+# as a 4th include entry once the halves are confirmed working.
 
-board:
-  - nice_nano_v2
-shield:
-  - sofle_right
-
-# BLE dongle / concentrator — central role for split connection
 include:
   - board: nice_nano_v2
-    artifact-name: supermini-dongle
-    cmake-args: >-
-      -DCONFIG_ZMK_BLE=y
-      -DCONFIG_ZMK_SPLIT_BLE=y
-      -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=y
-      -DCONFIG_BT_MAX_CONN=6
+    shield: sofle_right
+    artifact-name: sofle_right
 
-# Left half — uncomment when the 3rd SuperMini arrives from Melbourne
-# shield:
-#   - sofle_left
+  - board: nice_nano_v2
+    shield: sofle_left
+    cmake-args: -DCONFIG_ZMK_SPLIT=y -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+    artifact-name: sofle_left
+
+  - board: nice_nano_v2
+    shield: settings_reset
+    artifact-name: settings_reset
+
+  # Phase 2 — BLE dongle as the split central:
+  # - board: nice_nano_v2
+  #   shield: sofle_dongle
+  #   artifact-name: sofle_dongle

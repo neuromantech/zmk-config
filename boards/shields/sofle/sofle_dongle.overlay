@@ -1,5 +1,5 @@
 /*
- * Sofle dongle overlay — no keys of its own.
+ * Sofle dongle overlay — no keys, no encoders of its own.
  * https://zmk.dev/docs/development/hardware-integration/dongle
  *
  * SPDX-License-Identifier: MIT
@@ -14,7 +14,7 @@
         zmk,physical-layout = &josefadamcik_sofle_layout;
     };
 
-    /* The dongle has no keys: mock kscan satisfies ZMK's requirement. */
+    /* The dongle has no keys: a mock kscan satisfies ZMK's requirement. */
     mock_kscan: mock_kscan_0 {
         compatible = "zmk,kscan-mock";
         columns = <0>;
@@ -22,8 +22,8 @@
         events = <0>;
     };
 
-    /* Full Sofle matrix transform (both halves), copied from the in-tree
-     * sofle shield so the dongle maps peripheral positions correctly. */
+    /* Full Sofle matrix transform (both halves), matching the in-tree sofle
+     * shield so peripheral key positions map correctly. */
     default_transform: keymap_transform_0 {
         compatible = "zmk,matrix-transform";
         columns = <16>;
@@ -40,6 +40,38 @@ RC(2,0) RC(2,1) RC(2,2) RC(2,3) RC(2,4) RC(2,5)                 RC(2,6) RC(2,7) 
 RC(3,0) RC(3,1) RC(3,2) RC(3,3) RC(3,4) RC(3,5) RC(4,5) RC(4,6) RC(3,6) RC(3,7) RC(3,8)  RC(3,9) RC(3,10) RC(3,11)
                 RC(4,0) RC(4,1) RC(4,2) RC(4,3) RC(4,4) RC(4,7) RC(4,8) RC(4,9) RC(4,10) RC(4,11)
         >;
+    };
+
+    /*
+     * Sensor list. The split central re-raises encoder events forwarded by the
+     * peripherals by INDEX, so the dongle must declare the same two sensors as
+     * the halves or the keymap's per-layer sensor-bindings overflow.
+     *
+     * The nodes are deliberately `disabled`: the dongle has no encoders, and
+     * ZMK's sensors code uses DEVICE_DT_GET_OR_NULL and skips absent devices
+     * (app/src/sensors.c: "No local device for %d"). So we get a correctly
+     * sized sensor table with no phantom GPIOs instantiated.
+     */
+    left_encoder: encoder_left {
+        compatible = "alps,ec11";
+        a-gpios = <&pro_micro 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        b-gpios = <&pro_micro 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        steps = <80>;
+        status = "disabled";
+    };
+
+    right_encoder: encoder_right {
+        compatible = "alps,ec11";
+        a-gpios = <&pro_micro 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        b-gpios = <&pro_micro 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        steps = <80>;
+        status = "disabled";
+    };
+
+    sensors: sensors {
+        compatible = "zmk,keymap-sensors";
+        sensors = <&left_encoder &right_encoder>;
+        triggers-per-rotation = <20>;
     };
 };
 

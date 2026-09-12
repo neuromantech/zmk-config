@@ -51,8 +51,8 @@
 &kp LSHFT   &kp Z     &kp X     &kp C     &kp V     &kp B        &kp SPACE
                &kp LGUI  &kp LALT  &kp LCTRL &mo LOWERALT &kp RET
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
-                               <&enc_left_kp PG_UP PG_DN>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>,
+                               <&inc_dec_kp PG_UP PG_DN>;
         };
 
         loweralt_layer {
@@ -71,8 +71,8 @@
 &trans    &kp EQUAL &kp MINUS &kp PLUS  &kp LBRC  &kp RBRC  &none
                &trans    &trans    &trans    &trans    &trans
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
-                               <&enc_left_kp PG_UP PG_DN>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>,
+                               <&inc_dec_kp PG_UP PG_DN>;
         };
 
         raise_layer {
@@ -91,8 +91,8 @@
 &trans      &kp K_UNDO   &kp K_CUT    &kp K_COPY   &kp K_PASTE  &trans
                   &trans       &trans       &trans       &trans
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>,
-                               <&enc_left_kp PG_UP PG_DN>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>,
+                               <&inc_dec_kp PG_UP PG_DN>;
         };
 
         adjust_layer {

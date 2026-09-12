@@ -177,17 +177,25 @@
         left_layer {
             display-name = "left one-hand";
 /*
- * Layer 4 — LEFT half copied in reading order (NOT mirrored).
+ * Layer 4 — LEFT half characters, letters starting at the FAR-LEFT column.
  * Reached by turning the encoder ANTICLOCKWISE; clockwise goes back.
  *
- * The right half's five real top-row positions carry 1 2 3 4 5 (the ` sits on
- * the unpopulated sixth position, RC(0,11)).
+ *   right half col:   0    1    2    3    4    5 (pinky / outer edge)
+ *   row 0 emits:      1    2    3    4    5    `
+ *   row 1 emits:      Q    W    E    R    T   ESC
+ *   row 2 emits:      A    S    D    F    G   TAB
+ *   row 3 emits:      Z    X    C    V    B  LSHFT
+ *
+ * The letters fill the inner five columns in reading order and the outer
+ * column carries the left half's specials, so the TAB/SHIFT/ESC/` keys land
+ * under the pinky where a modifier belongs. The ` sits on the unpopulated
+ * sixth position (RC(0,11)), so it is reachable via the lower layer instead.
  */
             bindings = <
 &none     &none     &none     &none     &none     &none                         &kp N1 &kp N2    &kp N3    &kp N4    &kp N5    &kp GRAVE
-&none     &none     &none     &none     &none     &none                         &kp ESC &kp Q    &kp W     &kp E     &kp R     &kp T
-&none     &none     &none     &none     &none     &none                         &kp TAB &kp A    &kp S     &kp D     &kp F     &kp G
-&none     &none     &none     &none     &none     &none      &none     &none    &kp LSHFT &kp Z  &kp X     &kp C     &kp V     &kp B
+&none     &none     &none     &none     &none     &none                         &kp Q  &kp W     &kp E     &kp R     &kp T     &kp ESC
+&none     &none     &none     &none     &none     &none                         &kp A  &kp S     &kp D     &kp F     &kp G     &kp TAB
+&none     &none     &none     &none     &none     &none      &none     &none    &kp Z  &kp X     &kp C     &kp V     &kp B     &kp LSHFT
                               &none     &none     &none     &none     &none             &kp SPACE &mo RAISE &kp RCTRL &kp RALT &kp RGUI
             >;
 

@@ -12,11 +12,19 @@
 #
 # Roles are set in config/*.conf + boards/shields/sofle/Kconfig.defconfig,
 # not via cmake-args, so `zmk` and `west` builds behave identically.
+#
+# EXCEPTION: ZMK Studio's USB endpoint is a SNIPPET, which cannot be expressed
+# in a .conf file — hence `snippet:` on the dongle entry below. Its Kconfig
+# (CONFIG_ZMK_STUDIO) lives in config/sofle_dongle.conf.
 
 include:
   - board: nice_nano_v2
     shield: sofle_dongle
     artifact-name: sofle_dongle
+    # ZMK Studio: adds the USB CDC-ACM endpoint (and the BLE GATT service is
+    # on by default). Central ONLY — peripherals have no Studio RPC endpoint,
+    # by design, in app/src/studio/Kconfig.
+    snippet: studio-rpc-usb-uart
 
   - board: nice_nano_v2
     shield: sofle_right

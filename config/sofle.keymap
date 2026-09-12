@@ -75,7 +75,9 @@
 #define LOWER   1
 #define RAISE   2
 #define ADJUST  3
-#define LEFT    4
+/* NOTE: must NOT be called LEFT — keys.h already defines LEFT as the arrow
+ * keycode, and redefining it silently rewrites `&kp LEFT`. */
+#define LEFTSIDE 4
 
 / {
 
@@ -123,7 +125,7 @@
             >;
 
             /* Encoder swaps the two one-handed layouts: CW -> 0 (right), CCW -> 4 (left) */
-            sensor-bindings = <&side_swap 0 4 &side_swap 0 4>;
+            sensor-bindings = <&side_swap BASE LEFTSIDE &side_swap BASE LEFTSIDE>;
         };
 
         lower_layer {
@@ -190,7 +192,17 @@
             >;
 
             /* Must repeat the swap here, or the encoder is dead on this layer */
-            sensor-bindings = <&side_swap 0 4 &side_swap 0 4>;
+            sensor-bindings = <&side_swap BASE LEFTSIDE &side_swap BASE LEFTSIDE>;
         };
+
+        /* --- ZMK Studio headroom ------------------------------------------
+         * Ignored by normal ZMK builds, but offered to ZMK Studio, which
+         * cannot ADD layers beyond what the devicetree declares. Declaring
+         * reserved layers here is the documented way to get room to build
+         * extra layers at runtime (Studio can rename/enable these).
+         * ------------------------------------------------------------------ */
+        studio_extra_1 { status = "reserved"; };
+        studio_extra_2 { status = "reserved"; };
+        studio_extra_3 { status = "reserved"; };
     };
 };

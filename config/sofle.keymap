@@ -5,15 +5,42 @@
  * Sofle — full keyboard keymap (covers BOTH halves + dongle central)
  * neuroman.tech: https://github.com/neuromantech/zmk-config
  *
+ * ============================================================================
+ * EXPERIMENT: one-handed right-half layout, swapped by the encoder.
+ * Branch: one-handed  (main is untouched — flash a main build to revert)
+ * ============================================================================
+ *
+ * Idea: with only the right half built, make it type the WHOLE keyboard by
+ * carrying two layouts and flipping between them with the rotary encoder:
+ *
+ *   encoder CLOCKWISE      -> layer 0 (RIGHT side)  right-half characters
+ *   encoder ANTICLOCKWISE  -> layer 4 (LEFT side)   mirrored left-half chars
+ *
+ * The mirror is a true positional mirror: the right half's outermost column
+ * (6/y/h/n) emits the left half's outermost column (5/t/g/b), so the same
+ * finger reaches the analogous key on either layout. Column c of the right half
+ * maps to column (5 - c) of the left half.
+ *
+ * HOW IT WORKS (v0.3 has no stock "encoder changes layer" behavior):
+ *   `zmk,behavior-sensor-rotate-var` takes two ARBITRARY behaviors as its
+ *   bindings — one per rotation direction — and `override_params` feeds the
+ *   keymap's two cells in as the parameter. So we bind `<&to>, <&to>` and pass
+ *   layer numbers: `&side_swap 0 4` means CW -> &to 0, CCW -> &to 4.
+ *   (&to fires on press only, which suits a tapped sensor event.)
+ *
+ * NOTE: sensor-bindings are per-layer, so the swap is bound on BOTH layer 0 and
+ * layer 4 — otherwise the encoder dies on the mirrored layer and there is no way
+ * back. Layers 1/2/3 (momentary) keep the old scroll/track-skip encoder.
+ *
+ * STILL REACHABLE: layers 2 (raise) and 3 keep &sys_reset / &bootloader on the
+ * two spacebar-half positions — important, since the dongle's RST trace is
+ * severed and this is the only route into its bootloader.
+ *
  * Hardware: 3x SuperMini NRF52840 (ZMK board id: nice_nano_v2)
  *   - sofle_left  / sofle_right : halves (encoders fitted)
  *   - sofle_dongle              : BLE dongle (central, no keys)
  *
- * This single keymap is used by every build (left, right, dongle) — ZMK's
- * central runs the full keymap; peripherals only report key positions.
- *
  * RGB underglow NOT enabled (LEDs not soldered yet) — no &rgb_ug here.
- * Encoders: bound to &inc_dec_kp (the only encoder rotate behavior in v0.3).
  */
 
 #include <behaviors.dtsi>
@@ -25,6 +52,7 @@
 #define LOWER   1
 #define RAISE   2
 #define ADJUST  3
+#define LEFT    4
 
 / {
 
@@ -37,12 +65,25 @@
         };
     };
 
+    behaviors {
+        /*
+         * Encoder -> layer switch. Two cells from the keymap:
+         *   cell 1 = layer for CLOCKWISE,  cell 2 = layer for ANTICLOCKWISE.
+         */
+        side_swap: side_swap {
+            compatible = "zmk,behavior-sensor-rotate-var";
+            #sensor-binding-cells = <2>;
+            bindings = <&to>, <&to>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
         default_layer {
-            display-name = "default";
+            display-name = "right";
 /*
+ * Layer 0 — RIGHT side characters (the normal right-half layout).
  * ,-----------------------------------------------------------.
  * |   `  |  1 |  2 |  3 |  4 |  5 |          |  6 |  7 |  8 |  9 |  0 |      |
  * |  ESC |  Q |  W |  E |  R |  T |          |  Y |  U |  I |  O |  P | BKSP |
@@ -58,14 +99,14 @@
                  &kp LGUI &kp LALT &kp LCTRL &mo LOWER  &kp RET    &kp SPACE  &mo RAISE  &kp RCTRL &kp RALT  &kp RGUI
             >;
 
-            /* Encoders: 1 = left (scroll), 2 = right (track skip) */
-            sensor-bindings = <&inc_dec_kp PG_UP PG_DN &inc_dec_kp C_NEXT C_PREV>;
+            /* Encoder swaps the two one-handed layouts: CW -> 0 (right), CCW -> 4 (left) */
+            sensor-bindings = <&side_swap 0 4 &side_swap 0 4>;
         };
 
         lower_layer {
             display-name = "lower";
 /*
- * Numbers / symbols / F-keys
+ * Layer 1 — numbers / symbols / F-keys (momentary, LOWER thumb)
  */
             bindings = <
 &trans    &kp F1    &kp F2    &kp F3      &kp F4    &kp F5                    &kp F6    &kp F7   &kp F8    &kp F9    &kp F10   &kp F11
@@ -80,7 +121,8 @@
         raise_layer {
             display-name = "raise";
 /*
- * Nav / Bluetooth / clipboard
+ * Layer 2 — nav / Bluetooth / clipboard (momentary, RAISE thumb).
+ * Bootloader escape lives here (see NOTE at the top of the file).
  */
             bindings = <
 &bt BT_CLR &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3 &bt BT_SEL 4                  &trans    &trans    &trans   &trans    &trans  &trans
@@ -95,7 +137,8 @@
         adjust_layer {
             display-name = "adjust";
 /*
- * System / power. RGB intentionally omitted (LEDs not soldered).
+ * Layer 3 — system / power (conditional: LOWER + RAISE held together).
+ * RGB intentionally omitted (LEDs not soldered).
  */
             bindings = <
 &bt BT_CLR        &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_SEL 3    &bt BT_SEL 4                            &none &none &none &none &none &none
@@ -104,6 +147,34 @@
 &none             &none           &none           &none           &none           &none            &none &none          &none &none &none &none &none &none
                                   &none           &none           &none           &none            &none           &none  &none &none &none &none
             >;
+        };
+
+        left_layer {
+            display-name = "left one-hand";
+/*
+ * Layer 4 — LEFT side characters, positionally MIRRORED onto the right half.
+ * Reached by turning the encoder ANTICLOCKWISE; turn it clockwise to go back.
+ *
+ *   right half col:  0    1    2    3    4    5
+ *   emits (row1):    T    R    E    W    Q   ESC      (mirror of left Q W E R T)
+ *   emits (row2):    G    F    D    S    A   TAB
+ *   emits (row3):    B    V    C    X    Z  LSHFT
+ *   emits (row0):   5    4    3    2    1    `
+ *
+ * Thumb cluster is deliberately IDENTICAL to layer 0 so space and the modifiers
+ * stay under the hand. Left-half thumb positions are &none (not physically
+ * present on this half).
+ */
+            bindings = <
+&none     &none     &none     &none     &none     &none                         &kp N5 &kp N4    &kp N3    &kp N2    &kp N1    &kp GRAVE
+&none     &none     &none     &none     &none     &none                         &kp T  &kp R     &kp E     &kp W     &kp Q     &kp ESC
+&none     &none     &none     &none     &none     &none                         &kp G  &kp F     &kp D     &kp S     &kp A     &kp TAB
+&none     &none     &none     &none     &none     &none      &none     &none    &kp B  &kp V     &kp C     &kp X     &kp Z     &kp LSHFT
+                              &none     &none     &none     &none     &none             &kp SPACE &mo RAISE &kp RCTRL &kp RALT &kp RGUI
+            >;
+
+            /* Must repeat the swap here, or the encoder is dead on this layer */
+            sensor-bindings = <&side_swap 0 4 &side_swap 0 4>;
         };
     };
 };

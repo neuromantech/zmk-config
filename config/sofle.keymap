@@ -14,12 +14,31 @@
  * carrying two layouts and flipping between them with the rotary encoder:
  *
  *   encoder CLOCKWISE      -> layer 0 (RIGHT side)  right-half characters
- *   encoder ANTICLOCKWISE  -> layer 4 (LEFT side)   mirrored left-half chars
+ *   encoder ANTICLOCKWISE  -> layer 4 (LEFT side)   left-half characters
  *
- * The mirror is a true positional mirror: the right half's outermost column
- * (6/y/h/n) emits the left half's outermost column (5/t/g/b), so the same
- * finger reaches the analogous key on either layout. Column c of the right half
- * maps to column (5 - c) of the left half.
+ * Layer 4 is a STRAIGHT COPY of the left half in reading order — right-half
+ * column N emits left-half column N, so the columns line up visually as you
+ * read across:
+ *
+ *   right half col:   0    1    2    3    4    5
+ *   row1 (was):       Y    U    I    O    P   BSPC
+ *   row1 emits:      ESC   Q    W    E    R    T
+ *   row2 (was):       H    J    K    L    ;    '
+ *   row2 emits:      TAB   A    S    D    F    G
+ *   row3 (was):       N    M    ,    .    /   RSFT
+ *   row3 emits:     LSFT   Z    X    C    V    B
+ *
+ *   NOTE: this is NOT the finger-consistent mapping (that would be a mirror).
+ *   Here the right index finger hits the left hand's outer-column keys.
+ *
+ * ROW 0 WRINKLE: the left half's top row has 6 keys (` 1 2 3 4 5) but the right
+ * half's RC(0,11) position is unpopulated (the in-tree keymap puts &none there;
+ * it is the encoder's neighbourhood, not a switch). So the digits are shifted
+ * onto the five real positions (1 2 3 4 5) and the ` is parked on the dead
+ * position. The ` stays reachable on the lower layer.
+ *
+ * Thumb cluster is IDENTICAL to layer 0 so space and the modifiers stay under
+ * the hand. Left-half thumb positions are &none (not physically present).
  *
  * HOW IT WORKS (v0.3 has no stock "encoder changes layer" behavior):
  *   `zmk,behavior-sensor-rotate-var` takes two ARBITRARY behaviors as its
@@ -28,13 +47,17 @@
  *   layer numbers: `&side_swap 0 4` means CW -> &to 0, CCW -> &to 4.
  *   (&to fires on press only, which suits a tapped sensor event.)
  *
+ *   The right half's encoder is sensor index 1 (sensors are indexed positionally
+ *   over the zmk,keymap-sensors list, and the peripheral forwards that index
+ *   verbatim), so it drives sensor-bindings entry [1].
+ *
  * NOTE: sensor-bindings are per-layer, so the swap is bound on BOTH layer 0 and
- * layer 4 — otherwise the encoder dies on the mirrored layer and there is no way
+ * layer 4 — otherwise the encoder dies on the other layer and there is no way
  * back. Layers 1/2/3 (momentary) keep the old scroll/track-skip encoder.
  *
- * STILL REACHABLE: layers 2 (raise) and 3 keep &sys_reset / &bootloader on the
- * two spacebar-half positions — important, since the dongle's RST trace is
- * severed and this is the only route into its bootloader.
+ * STILL REACHABLE: layers 1 (lower) and 2 (raise) keep &sys_reset / &bootloader
+ * on the two spacebar-half positions — important, since the dongle's RST trace
+ * is severed and this is the only route into its bootloader.
  *
  * Hardware: 3x SuperMini NRF52840 (ZMK board id: nice_nano_v2)
  *   - sofle_left  / sofle_right : halves (encoders fitted)
@@ -152,24 +175,17 @@
         left_layer {
             display-name = "left one-hand";
 /*
- * Layer 4 — LEFT side characters, positionally MIRRORED onto the right half.
- * Reached by turning the encoder ANTICLOCKWISE; turn it clockwise to go back.
+ * Layer 4 — LEFT half copied in reading order (NOT mirrored).
+ * Reached by turning the encoder ANTICLOCKWISE; clockwise goes back.
  *
- *   right half col:  0    1    2    3    4    5
- *   emits (row1):    T    R    E    W    Q   ESC      (mirror of left Q W E R T)
- *   emits (row2):    G    F    D    S    A   TAB
- *   emits (row3):    B    V    C    X    Z  LSHFT
- *   emits (row0):   5    4    3    2    1    `
- *
- * Thumb cluster is deliberately IDENTICAL to layer 0 so space and the modifiers
- * stay under the hand. Left-half thumb positions are &none (not physically
- * present on this half).
+ * The right half's five real top-row positions carry 1 2 3 4 5 (the ` sits on
+ * the unpopulated sixth position, RC(0,11)).
  */
             bindings = <
-&none     &none     &none     &none     &none     &none                         &kp N5 &kp N4    &kp N3    &kp N2    &kp N1    &kp GRAVE
-&none     &none     &none     &none     &none     &none                         &kp T  &kp R     &kp E     &kp W     &kp Q     &kp ESC
-&none     &none     &none     &none     &none     &none                         &kp G  &kp F     &kp D     &kp S     &kp A     &kp TAB
-&none     &none     &none     &none     &none     &none      &none     &none    &kp B  &kp V     &kp C     &kp X     &kp Z     &kp LSHFT
+&none     &none     &none     &none     &none     &none                         &kp N1 &kp N2    &kp N3    &kp N4    &kp N5    &kp GRAVE
+&none     &none     &none     &none     &none     &none                         &kp ESC &kp Q    &kp W     &kp E     &kp R     &kp T
+&none     &none     &none     &none     &none     &none                         &kp TAB &kp A    &kp S     &kp D     &kp F     &kp G
+&none     &none     &none     &none     &none     &none      &none     &none    &kp LSHFT &kp Z  &kp X     &kp C     &kp V     &kp B
                               &none     &none     &none     &none     &none             &kp SPACE &mo RAISE &kp RCTRL &kp RALT &kp RGUI
             >;
 
